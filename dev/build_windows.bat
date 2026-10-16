@@ -5,7 +5,7 @@ REM Run from "x64 Native Tools Command Prompt for VS 2022" or a normal terminal.
 setlocal
 cd /d "%~dp0..\plugin"
 
-cmake -B build -G "Visual Studio 17 2022" -A x64 || goto :fail
+cmake -B build -A x64 || goto :fail
 cmake --build build --config Release --target VoiceCast_VST3 VoiceCast_Standalone || goto :fail
 
 set "SRC=%~dp0..\plugin\build\VoiceCast_artefacts\Release\VST3\Instant Voicemod.vst3"
