@@ -26,7 +26,7 @@ cp -R "$AU" "$WORK/root/Library/Audio/Plug-Ins/Components/"
 pkgbuild --analyze --root "$WORK/root" "$WORK/components.plist"
 i=0
 while /usr/libexec/PlistBuddy -c "Print :$i" "$WORK/components.plist" >/dev/null 2>&1; do
-  /usr/libexec/PlistBuddy -c "Set :$i:BundleIsRelocatable false" "$WORK/components.plist"
+  plutil -replace "$i.BundleIsRelocatable" -bool NO "$WORK/components.plist"
   i=$((i + 1))
 done
 
