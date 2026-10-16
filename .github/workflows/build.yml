@@ -10,10 +10,16 @@ permissions:
 
 env:
   WHISPER_MODEL: base
+  RUN: bash packaging/ci_run.sh
 
 jobs:
   windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      MSYS_NO_PATHCONV: "1"   # keep /m, /D... as-is in Git Bash
     steps:
       - uses: actions/checkout@v4
 
@@ -23,26 +29,27 @@ jobs:
 
       - name: Build VST3 effect and audio engine
         run: |
-          cmake -S plugin -B plugin/build -G "Visual Studio 17 2022" -A x64
-          cmake --build plugin/build --config Release --target VoiceCast_VST3 InstantVoiceEngine
-          New-Item -ItemType Directory -Force companion/engine | Out-Null
-          Copy-Item plugin/build/InstantVoiceEngine_artefacts/Release/InstantVoiceEngine.exe companion/engine/
+          $RUN cmake -S plugin -B plugin/build -G "Visual Studio 17 2022" -A x64
+          $RUN cmake --build plugin/build --config Release --target VoiceCast_VST3 InstantVoiceEngine -- /m /v:minimal
+          mkdir -p companion/engine
+          cp plugin/build/InstantVoiceEngine_artefacts/Release/InstantVoiceEngine.exe companion/engine/
 
       - name: Build app
         working-directory: companion
         env:
           APP_VERSION: 0.1.${{ github.run_number }}
+          RUN: bash ../packaging/ci_run.sh
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller huggingface_hub
-          python ../packaging/fetch_model.py $env:WHISPER_MODEL
-          python ../packaging/make_icon.py
-          pyinstaller --noconfirm ../packaging/instantvoice.spec
+          $RUN pip install -r requirements.txt pyinstaller huggingface_hub
+          $RUN python ../packaging/fetch_model.py "$WHISPER_MODEL"
+          $RUN python ../packaging/make_icon.py
+          $RUN pyinstaller --noconfirm ../packaging/instantvoice.spec
 
       - name: Build installer
         run: |
           choco install innosetup -y --no-progress
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=0.1.${{ github.run_number }}" packaging\windows\installer.iss
+          $RUN "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "/DAppVersion=0.1.${{ github.run_number }}" packaging/windows/installer.iss
 
       - uses: actions/upload-artifact@v4
         with:
@@ -69,8 +76,8 @@ jobs:
 
       - name: Build Audio Unit effect and audio engine
         run: |
-          cmake -S plugin -B plugin/build -DCMAKE_BUILD_TYPE=Release
-          cmake --build plugin/build --config Release --target VoiceCast_AU InstantVoiceEngine -j "$(sysctl -n hw.ncpu)"
+          $RUN cmake -S plugin -B plugin/build -DCMAKE_BUILD_TYPE=Release
+          $RUN cmake --build plugin/build --config Release --target VoiceCast_AU InstantVoiceEngine -j "$(sysctl -n hw.ncpu)"
           mkdir -p companion/engine
           cp -R plugin/build/InstantVoiceEngine_artefacts/Release/InstantVoiceEngine.app companion/engine/
 
@@ -78,17 +85,18 @@ jobs:
         working-directory: companion
         env:
           APP_VERSION: 0.1.${{ github.run_number }}
+          RUN: bash ../packaging/ci_run.sh
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller huggingface_hub
-          python ../packaging/fetch_model.py "$WHISPER_MODEL"
-          python ../packaging/make_icon.py
-          pyinstaller --noconfirm ../packaging/instantvoice.spec
+          $RUN pip install -r requirements.txt pyinstaller huggingface_hub
+          $RUN python ../packaging/fetch_model.py "$WHISPER_MODEL"
+          $RUN python ../packaging/make_icon.py
+          $RUN pyinstaller --noconfirm ../packaging/instantvoice.spec
 
       - name: Build installer
         run: |
           chmod +x packaging/macos/build_pkg.sh packaging/macos/scripts/postinstall
-          packaging/macos/build_pkg.sh "0.1.${{ github.run_number }}" "${{ matrix.label }}"
+          $RUN packaging/macos/build_pkg.sh "0.1.${{ github.run_number }}" "${{ matrix.label }}"
 
       - uses: actions/upload-artifact@v4
         with:
