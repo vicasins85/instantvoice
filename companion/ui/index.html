@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instant Voicemod</title>
+<style>
+:root{
+  --ground:#0C0E16; --panel:#121521; --card:#141826; --line:#222637; --line2:#2A2F43;
+  --text:#ECEEF5; --muted:#9DA2B8; --faint:#868BA0;
+  --accent:#8B7CFF; --accent-soft:#1E1E3A; --accent-line:#3F3A73; --accent-text:#CFC9FF; --on-accent:#0C0E16;
+  --ok:#4CD08A; --warn:#F0AF32;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ground);color:var(--text);
+  font-family:"SF Pro Text","Segoe UI Variable","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px}
+.app{min-height:100%;display:flex;flex-direction:column}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;padding:12px 22px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{height:34px;display:flex;align-items:center}
+.logo img{height:34px;width:auto}
+.logo .ph{height:34px;min-width:120px;border:1.5px dashed #4A5070;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 12px;font-size:11px;color:#A3A8BD}
+.title{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.pill{font-size:12px;color:#C8CBD8;background:#1D2130;border-radius:999px;padding:5px 12px;display:inline-flex;align-items:center;gap:8px;max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.toggle{display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 16px 0 10px;border-radius:999px;font-size:14px;font-weight:600;border:1px solid var(--line2);background:#181B28;color:var(--muted)}
+.toggle .knob{width:32px;height:18px;border-radius:999px;border:2px solid #474D66;position:relative}
+.toggle .knob::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#474D66;transition:left .15s}
+.toggle[aria-pressed=true]{border-color:var(--accent-line);background:var(--accent-soft);color:var(--accent-text)}
+.toggle[aria-pressed=true] .knob{border-color:var(--accent);background:var(--accent)}
+.toggle[aria-pressed=true] .knob::after{left:16px;background:var(--on-accent)}
+.iconbtn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line2);background:#181B28;color:#C8CBD8;display:inline-flex;align-items:center;justify-content:center}
+.body{flex:1;display:flex;flex-wrap:wrap;align-items:stretch;min-height:0}
+nav{flex:1 1 200px;max-width:230px;min-width:180px;padding:18px 12px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.label{font-size:11px;letter-spacing:.08em;color:var(--faint);padding:0 10px 8px}
+.navbtn{display:flex;align-items:center;justify-content:space-between;min-height:42px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:#C8CBD8;font-size:14px;text-align:left}
+.navbtn.sel{background:#1F2333;color:#fff;font-weight:600}
+.navbtn .n{font-size:12px;color:var(--faint)}
+.slotkey{font-size:12px;color:var(--accent-text);border:1px solid #353B52;border-radius:6px;padding:2px 7px;margin-right:8px}
+main{flex:999 1 480px;min-width:0;padding:22px 26px;display:flex;flex-direction:column;gap:18px;overflow:auto}
+.banner{border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.45;border:1px solid}
+.banner.warn{background:#2A2414;border-color:#5C4A1C;color:#F3DDA8}
+.banner.info{background:#16192A;border-color:#2E3452;color:#C8CBD8}
+.banner button{background:none;border:0;color:var(--accent-text);text-decoration:underline;padding:0}
+.describe{background:var(--card);border:1px solid #272C40;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.describe label{font-size:15px;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.describe input{flex:1 1 240px;min-width:0;height:50px;border-radius:12px;border:1px solid #323850;background:var(--ground);color:var(--text);font:inherit;font-size:16px;padding:0 16px}
+.describe input::placeholder{color:var(--faint)}
+.primary{height:50px;padding:0 22px;border-radius:12px;border:0;background:var(--accent);color:var(--on-accent);font-size:15px;font-weight:700}
+.primary[disabled]{opacity:.6;cursor:progress}
+.hint{font-size:12px;color:var(--muted)}
+.gridhead{display:flex;align-items:baseline;justify-content:space-between}
+.gridhead h2{margin:0;font-size:19px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+.cardwrap{position:relative}
+.card{width:100%;min-height:140px;display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:14px;border-radius:16px;text-align:left;background:var(--card);border:2px solid #232839}
+.card.sel{background:var(--accent-soft);border-color:var(--accent)}
+.tile{width:50px;height:50px;border-radius:14px;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:17px;font-weight:700}
+.vname{font-size:14.5px;font-weight:600;color:var(--text)}
+.tag{font-size:11px;color:var(--muted)}
+.tag.custom{color:var(--accent-text)}
+.star{position:absolute;top:4px;right:4px;width:44px;height:44px;border:0;background:transparent;color:#6C7189;display:inline-flex;align-items:center;justify-content:center}
+.star.on{color:var(--accent)}
+aside{flex:1 1 270px;max-width:330px;padding:22px 20px;border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:16px}
+.active{display:flex;align-items:center;gap:14px}
+.active .tile{width:60px;height:60px;border-radius:18px;font-size:21px}
+.aname{font-size:20px;font-weight:700}
+.slider{display:flex;flex-direction:column;gap:2px}
+.slider .top{display:flex;justify-content:space-between;font-size:14px}
+.slider .top span{font-size:12px;color:var(--muted)}
+input[type=range]{width:100%;height:28px;margin:0;accent-color:var(--accent)}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+.ghost{flex:1 1 90px;height:42px;border-radius:12px;border:1px solid #353B52;background:#1B1F2E;color:var(--text);font-size:13px;font-weight:600}
+.ghost.plain{background:transparent}
+.empty{color:var(--muted);font-size:14px;line-height:1.5}
+footer{display:flex;flex-wrap:wrap;gap:6px 20px;padding:10px 22px;border-top:1px solid var(--line);background:var(--panel);font-size:12px;color:var(--muted)}
+footer b{color:var(--text);font-weight:500}
+dialog{border:1px solid var(--line2);border-radius:18px;background:var(--panel);color:var(--text);padding:22px;width:min(460px,92vw)}
+dialog::backdrop{background:rgba(5,6,10,.6)}
+dialog h3{margin:0 0 14px;font-size:18px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;font-size:14px}
+.field input[type=password],.field select{height:44px;border-radius:10px;border:1px solid #323850;background:var(--ground);color:var(--text);font:inherit;padding:0 12px}
+.check{display:flex;align-items:center;gap:10px;font-size:14px;margin-bottom:14px}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+.small{font-size:12px;color:var(--muted);line-height:1.45}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:12px;margin:6px 0 16px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo"><img src="logo.png" alt="Voicemod" onerror="this.outerHTML='<span class=&quot;ph mono&quot;>[VOICEMOD LOGO]</span>'"></div>
+      <span class="title">Instant Voicemod</span>
+      <span class="pill mono" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Starting...</span></span>
+    </div>
+    <div class="actions">
+      <button class="toggle" id="onToggle" aria-pressed="false"><span class="knob"></span>Voice changer</button>
+      <button class="iconbtn" id="settingsBtn" aria-label="Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="body">
+    <nav aria-label="Library">
+      <span class="label mono">LIBRARY</span>
+      <div id="filters"></div>
+      <span class="label mono" style="padding-top:20px">SLOTS</span>
+      <div id="slots"></div>
+    </nav>
+
+    <main>
+      <div id="banners"></div>
+      <form class="describe" id="describeForm">
+        <label for="describe">Describe a voice</label>
+        <div class="row">
+          <input id="describe" type="text" autocomplete="off" placeholder="angry ogre, 80s robot, ghost in a cave...">
+          <button class="primary" id="createBtn" type="submit">Create voice</button>
+        </div>
+        <span class="hint mono" id="pttHint">Or hold Ctrl + Alt + V anywhere and say it. Nobody hears the command.</span>
+      </form>
+      <div class="gridhead"><h2 id="gridTitle">All voices</h2><span class="hint mono">click to apply</span></div>
+      <div class="grid" id="grid"></div>
+    </main>
+
+    <aside aria-label="Active voice" id="activePanel"></aside>
+  </div>
+
+  <footer class="mono" id="footer"></footer>
+</div>
+
+<dialog id="settings">
+  <h3>Settings</h3>
+  <div class="field">
+    <label for="apiKey">AI key (Anthropic API)</label>
+    <input id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off">
+    <span class="small" id="keyState"></span>
+  </div>
+  <div class="field">
+    <label for="language">Language you speak commands in</label>
+    <select id="language"><option value="es">Spanish</option><option value="en">English</option><option value="auto">Auto-detect</option></select>
+  </div>
+  <label class="check"><input type="checkbox" id="autostart"> Start with my computer</label>
+  <div class="small">Shortcuts</div>
+  <div class="keys mono" id="keyList"></div>
+  <div class="btnrow">
+    <button class="ghost plain" id="removeKey" type="button">Remove key</button>
+    <button class="ghost plain" id="cancelSettings" type="button">Cancel</button>
+    <button class="primary" id="saveSettings" type="button" style="height:42px;flex:1 1 90px">Save</button>
+  </div>
+</dialog>
+
+<script>
+const MACROS = [["size","Size","small","huge"],["pitch","Pitch","low","high"],["grit","Grit","clean","growl"],["space","Space","dry","cave"],["robot","Robot","human","machine"]];
+let S = null, filter = "all", busy = false;
+
+// Preview in a normal browser (no app around it): fake backend so the page still works.
+const demo = {
+  st: {on:false,currentId:null,status:"Preview mode",pluginOk:false,hasAi:false,hotkeys:{push_to_talk:"ctrl+alt+v",clear:"ctrl+alt+x"},
+       slots:[{n:1,name:"Empty"},{n:2,name:"Empty"},{n:3,name:"Empty"}],
+       voices:[["ogre","Angry ogre","#8A4520",[80,25,45,20,0]],["robot","Robot","#3D4F86",[50,50,15,10,80]],["radio","Police radio","#2F6B5A",[50,50,30,0,0]],["ghost","Ghost","#5B4B87",[40,60,0,85,0]]]
+       .map(([id,name,color,macros])=>({id,name,color,macros,custom:false,fav:false,mono:name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}))},
+  state(){return this.st}, pick(id){this.st.currentId=id;this.st.on=true}, toggle(on){this.st.on=on}, clear(){this.st.on=false},
+  create(t){const id="c"+Date.now();this.st.voices.unshift({id,name:t,color:"#7A3B5C",macros:[50,50,20,20,0],custom:true,fav:false,mono:t.slice(0,2).toUpperCase()});this.st.currentId=id;this.st.on=true},
+  macro(id,n,v){const x=this.st.voices.find(v=>v.id===id);x.macros[MACROS.findIndex(m=>m[0]===n)]=v}, reset(){}, fav(id){const x=this.st.voices.find(v=>v.id===id);x.fav=!x.fav},
+  remove(id){this.st.voices=this.st.voices.filter(v=>v.id!==id)}, slot_save(){}, slot_recall(){},
+  get_settings(){return {hasKey:false,autostart:true,language:"es",hotkeys:this.st.hotkeys}}, save_settings(d){return this.get_settings()}
+};
+const api = () => (window.pywebview && window.pywebview.api) ? window.pywebview.api : {
+  ...Object.fromEntries(Object.keys(demo).filter(k=>typeof demo[k]==="function").map(k=>[k,(...a)=>Promise.resolve(demo[k](...a))]))
+};
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const keyLabel = k => (k||"").split("+").map(p => p.length===1 ? p.toUpperCase() : p[0].toUpperCase()+p.slice(1)).join(" + ").replace(/Alt/g, navigator.platform.startsWith("Mac") ? "Option" : "Alt");
+
+async function refresh(){ S = await api().state(); render(); }
+window.__refresh = refresh;
+
+function render(){
+  if(!S) return;
+  const st = S.status || "";
+  document.getElementById("statusText").textContent = st;
+  const dot = st.startsWith("Listening") ? "#EB4646" : st.startsWith("Thinking") ? "var(--warn)" : S.on ? "var(--ok)" : "#6C7189";
+  document.getElementById("statusDot").style.background = dot;
+  document.getElementById("onToggle").setAttribute("aria-pressed", S.on ? "true" : "false");
+  document.getElementById("pttHint").textContent = `Or hold ${keyLabel(S.hotkeys.push_to_talk)} anywhere and say it. Nobody hears the command.`;
+
+  // banners
+  const b = [];
+  if(!S.pluginOk) b.push(`<div class="banner warn">The voice effect isn't connected yet. Open <b>Wave Link</b>, and on your microphone add the effect <b>Instant Voicemod</b>.</div>`);
+  if(!S.hasAi) b.push(`<div class="banner info">Built-in voices work right away. To create <i>any</i> voice from a description, <button id="openKey">add your AI key</button>.</div>`);
+  document.getElementById("banners").innerHTML = b.join("");
+  const ok = document.getElementById("openKey"); if(ok) ok.onclick = openSettings;
+
+  // filters
+  const counts = {all:S.voices.length, fav:S.voices.filter(v=>v.fav).length, custom:S.voices.filter(v=>v.custom).length};
+  const names = {all:"All voices", fav:"Favorites", custom:"My voices"};
+  document.getElementById("filters").innerHTML = Object.keys(names).map(k =>
+    `<button class="navbtn ${filter===k?"sel":""}" data-filter="${k}">${names[k]}<span class="n mono">${counts[k]}</span></button>`).join("");
+  document.getElementById("slots").innerHTML = S.slots.map(s =>
+    `<button class="navbtn" data-slot="${s.n}"><span><span class="slotkey mono">${s.n}</span>${esc(s.name)}</span></button>`).join("");
+  document.getElementById("gridTitle").textContent = names[filter];
+
+  // grid
+  const shown = S.voices.filter(v => filter==="all" || (filter==="fav" && v.fav) || (filter==="custom" && v.custom));
+  document.getElementById("grid").innerHTML = shown.length ? shown.map(v => `
+    <div class="cardwrap">
+      <button class="card ${S.on && v.id===S.currentId ? "sel" : ""}" data-pick="${v.id}" aria-pressed="${S.on && v.id===S.currentId}">
+        <span class="tile" style="background:${v.color}">${esc(v.mono)}</span>
+        <span class="vname">${esc(v.name)}</span>
+        <span class="tag mono ${v.custom?"custom":""}">${v.custom?"Created":"Built-in"}</span>
+      </button>
+      <button class="star ${v.fav?"on":""}" data-fav="${v.id}" aria-label="Favorite" aria-pressed="${v.fav}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="${v.fav?"currentColor":"none"}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>
+      </button>
+    </div>`).join("") : `<p class="empty">Nothing here yet.</p>`;
+
+  // active panel
+  const a = S.voices.find(v => v.id === S.currentId);
+  const panel = document.getElementById("activePanel");
+  if(!a){
+    panel.innerHTML = `<span class="label mono" style="padding:0">ACTIVE VOICE</span><p class="empty">Pick a voice, type one, or hold ${esc(keyLabel(S.hotkeys.push_to_talk))} and say it.</p>`;
+  } else {
+    panel.innerHTML = `
+      <span class="label mono" style="padding:0">ACTIVE VOICE${S.on?"":" (OFF)"}</span>
+      <div class="active"><span class="tile" style="background:${a.color}">${esc(a.mono)}</span>
+        <div><div class="aname">${esc(a.name)}</div><div class="tag mono ${a.custom?"custom":""}">${a.custom?"Created":"Built-in"}</div></div></div>
+      ${MACROS.map(([k,l,lo,hi],i) => `
+        <div class="slider"><div class="top"><label for="m-${k}">${l}</label><span class="mono" id="h-${k}">${hint(a.macros[i],lo,hi)}</span></div>
+        <input type="range" id="m-${k}" min="0" max="100" value="${a.macros[i]}" data-macro="${k}" data-lo="${lo}" data-hi="${hi}"></div>`).join("")}
+      <div class="small">Save to slot</div>
+      <div class="btnrow">${[1,2,3].map(n=>`<button class="ghost" data-save="${n}">Slot ${n}</button>`).join("")}</div>
+      <div class="btnrow">
+        <button class="ghost plain" data-reset="${a.id}">Reset sliders</button>
+        ${a.custom ? `<button class="ghost plain" data-remove="${a.id}">Delete voice</button>` : ""}
+        <button class="ghost plain" id="normalBtn">Normal voice</button>
+      </div>`;
+    document.getElementById("normalBtn").onclick = () => api().clear().then(refresh);
+  }
+
+  const hk = S.hotkeys;
+  document.getElementById("footer").innerHTML = [
+    [hk.push_to_talk,"hold to speak a voice"],[hk.clear,"normal voice"],[hk.slot_1 && hk.slot_1.replace(/1$/,"1-3"),"slots"],[hk.save_1 && hk.save_1.replace(/1$/,"1-3"),"save slot"]
+  ].filter(x=>x[0]).map(([k,t]) => `<span><b>${esc(keyLabel(k))}</b> ${t}</span>`).join("");
+}
+
+function hint(v, lo, hi){ return v < 34 ? lo : v > 66 ? hi : "mid"; }
+
+// events (delegated)
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button"); if(!t) return;
+  const d = t.dataset;
+  if(d.filter){ filter = d.filter; render(); return; }
+  if(d.pick){ await api().pick(d.pick); }
+  else if(d.fav){ await api().fav(d.fav); }
+  else if(d.slot){ await api().slot_recall(+d.slot); }
+  else if(d.save){ await api().slot_save(+d.save); }
+  else if(d.reset){ await api().reset(d.reset); }
+  else if(d.remove){ if(confirm("Delete this voice?")) await api().remove(d.remove); }
+  else return;
+  refresh();
+});
+document.addEventListener("input", e => {
+  const r = e.target; if(!r.dataset || !r.dataset.macro) return;
+  document.getElementById("h-"+r.dataset.macro).textContent = hint(+r.value, r.dataset.lo, r.dataset.hi);
+});
+document.addEventListener("change", async e => {
+  const r = e.target; if(!r.dataset || !r.dataset.macro || !S || !S.currentId) return;
+  await api().macro(S.currentId, r.dataset.macro, +r.value); refresh();
+});
+document.getElementById("onToggle").onclick = async () => { await api().toggle(!S.on); refresh(); };
+document.getElementById("describeForm").onsubmit = async e => {
+  e.preventDefault();
+  const input = document.getElementById("describe"), btn = document.getElementById("createBtn");
+  const text = input.value.trim(); if(!text || busy) return;
+  busy = true; btn.disabled = true; btn.textContent = "Creating...";
+  try { await api().create(text); input.value = ""; filter = "all"; }
+  finally { busy = false; btn.disabled = false; btn.textContent = "Create voice"; refresh(); }
+};
+
+// settings
+const dlg = document.getElementById("settings");
+async function openSettings(){
+  const s = await api().get_settings();
+  document.getElementById("apiKey").value = "";
+  document.getElementById("keyState").textContent = s.hasKey ? "A key is saved. Paste a new one to replace it." : "No key yet. Get one at console.anthropic.com (API Keys).";
+  document.getElementById("language").value = s.language;
+  document.getElementById("autostart").checked = !!s.autostart;
+  document.getElementById("keyList").innerHTML = Object.entries(s.hotkeys).map(([k,v]) => `<span>${esc(keyLabel(v))}</span><span>${k.replace(/_/g," ")}</span>`).join("");
+  dlg.showModal();
+}
+document.getElementById("settingsBtn").onclick = openSettings;
+document.getElementById("cancelSettings").onclick = () => dlg.close();
+document.getElementById("removeKey").onclick = async () => { await api().save_settings({removeKey:true}); dlg.close(); refresh(); };
+document.getElementById("saveSettings").onclick = async () => {
+  await api().save_settings({ apiKey: document.getElementById("apiKey").value, language: document.getElementById("language").value,
+                              autostart: document.getElementById("autostart").checked });
+  dlg.close(); refresh();
+};
+
+window.addEventListener("pywebviewready", refresh);
+setTimeout(() => { if(!S) refresh(); }, 1500);
+setInterval(refresh, 4000);
+</script>
+</body>
+</html>

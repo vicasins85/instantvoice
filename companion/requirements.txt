@@ -1,0 +1,9 @@
+anthropic>=0.40
+faster-whisper>=1.0
+sounddevice>=0.4
+numpy>=1.24
+pynput>=1.7
+python-osc>=1.8
+pystray>=0.19
+Pillow>=10
+pywebview>=5.0

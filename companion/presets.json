@@ -1,0 +1,247 @@
+{
+  "ogre": {
+    "name": "Angry ogre",
+    "color": "#8A4520",
+    "keywords": [
+      "ogre",
+      "ogro",
+      "troll",
+      "orc",
+      "orco",
+      "monster",
+      "monstruo",
+      "bestia",
+      "beast"
+    ],
+    "params": {
+      "pitch_semitones": -6,
+      "formant_semitones": -4,
+      "drive": 0.35,
+      "low_shelf_db": 5,
+      "high_shelf_db": -3,
+      "reverb_size": 0.3,
+      "reverb_mix": 0.12
+    }
+  },
+  "giant": {
+    "name": "Giant",
+    "color": "#6B4A2E",
+    "keywords": [
+      "giant",
+      "gigante",
+      "titan",
+      "titán",
+      "huge",
+      "enorme"
+    ],
+    "params": {
+      "pitch_semitones": -9,
+      "formant_semitones": -6,
+      "low_shelf_db": 6,
+      "reverb_size": 0.7,
+      "reverb_mix": 0.3
+    }
+  },
+  "demon": {
+    "name": "Demon",
+    "color": "#8C2F3F",
+    "keywords": [
+      "demon",
+      "demonio",
+      "diablo",
+      "devil",
+      "satan",
+      "satán",
+      "possessed",
+      "poseído",
+      "infernal"
+    ],
+    "params": {
+      "pitch_semitones": -10,
+      "formant_semitones": -3,
+      "drive": 0.5,
+      "ring_hz": 40,
+      "ring_mix": 0.25,
+      "reverb_size": 0.8,
+      "reverb_mix": 0.35
+    }
+  },
+  "robot": {
+    "name": "Robot",
+    "color": "#3D4F86",
+    "keywords": [
+      "robot",
+      "android",
+      "androide",
+      "machine",
+      "máquina",
+      "cyborg",
+      "ia",
+      "ai"
+    ],
+    "params": {
+      "ring_hz": 90,
+      "ring_mix": 0.7,
+      "bitcrush_bits": 10,
+      "highpass_hz": 150,
+      "chorus_mix": 0.2,
+      "output_gain_db": 4
+    }
+  },
+  "radio": {
+    "name": "Police radio",
+    "color": "#2F6B5A",
+    "keywords": [
+      "radio",
+      "walkie",
+      "walkie talkie",
+      "police radio",
+      "radio policial",
+      "telephone",
+      "teléfono",
+      "phone",
+      "pilot",
+      "piloto"
+    ],
+    "params": {
+      "highpass_hz": 400,
+      "lowpass_hz": 3200,
+      "drive": 0.25,
+      "bitcrush_bits": 12,
+      "high_shelf_db": 3
+    }
+  },
+  "old_radio": {
+    "name": "Old radio",
+    "color": "#6A5A1E",
+    "keywords": [
+      "old radio",
+      "radio antigua",
+      "gramophone",
+      "gramófono",
+      "1940",
+      "vintage",
+      "antiguo"
+    ],
+    "params": {
+      "highpass_hz": 600,
+      "lowpass_hz": 2500,
+      "drive": 0.4,
+      "bitcrush_bits": 8
+    }
+  },
+  "chipmunk": {
+    "name": "Chipmunk",
+    "color": "#7A5A12",
+    "keywords": [
+      "chipmunk",
+      "ardilla",
+      "helium",
+      "helio",
+      "cartoon",
+      "dibujo animado",
+      "pitufo",
+      "smurf"
+    ],
+    "params": {
+      "pitch_semitones": 8,
+      "formant_semitones": 5
+    }
+  },
+  "child": {
+    "name": "Child",
+    "color": "#7A3B5C",
+    "keywords": [
+      "child",
+      "kid",
+      "niño",
+      "niña",
+      "crío",
+      "baby",
+      "bebé"
+    ],
+    "params": {
+      "pitch_semitones": 5,
+      "formant_semitones": 4,
+      "high_shelf_db": 2
+    }
+  },
+  "cave": {
+    "name": "Cave",
+    "color": "#4A5560",
+    "keywords": [
+      "cave",
+      "cueva",
+      "cathedral",
+      "catedral",
+      "echo",
+      "eco",
+      "hall"
+    ],
+    "params": {
+      "reverb_size": 0.95,
+      "reverb_mix": 0.6,
+      "low_shelf_db": 3
+    }
+  },
+  "alien": {
+    "name": "Alien",
+    "color": "#1F6E7A",
+    "keywords": [
+      "alien",
+      "extraterrestre",
+      "marciano",
+      "martian",
+      "ufo",
+      "ovni"
+    ],
+    "params": {
+      "pitch_semitones": 3,
+      "formant_semitones": 7,
+      "ring_hz": 600,
+      "ring_mix": 0.35,
+      "chorus_mix": 0.5,
+      "reverb_mix": 0.2
+    }
+  },
+  "underwater": {
+    "name": "Underwater",
+    "color": "#2E5E7A",
+    "keywords": [
+      "underwater",
+      "bajo el agua",
+      "submarino",
+      "drowning",
+      "ahogado",
+      "agua"
+    ],
+    "params": {
+      "lowpass_hz": 1200,
+      "chorus_mix": 0.8,
+      "reverb_size": 0.6,
+      "reverb_mix": 0.35,
+      "low_shelf_db": 4
+    }
+  },
+  "ghost": {
+    "name": "Ghost",
+    "color": "#5B4B87",
+    "keywords": [
+      "ghost",
+      "fantasma",
+      "spirit",
+      "espíritu",
+      "spooky",
+      "espectro"
+    ],
+    "params": {
+      "pitch_semitones": 2,
+      "formant_semitones": 2,
+      "chorus_mix": 0.7,
+      "reverb_size": 0.9,
+      "reverb_mix": 0.55,
+      "high_shelf_db": 3,
+      "low_shelf_db": -6
+    }
+  }
+}

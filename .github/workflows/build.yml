@@ -1,0 +1,126 @@
+name: Build installers
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  WHISPER_MODEL: base
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build VST3 effect
+        run: |
+          cmake -S plugin -B plugin/build -G "Visual Studio 17 2022" -A x64
+          cmake --build plugin/build --config Release --target VoiceCast_VST3
+
+      - name: Build app
+        working-directory: companion
+        env:
+          APP_VERSION: 0.1.${{ github.run_number }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller huggingface_hub
+          python ../packaging/fetch_model.py $env:WHISPER_MODEL
+          python ../packaging/make_icon.py
+          pyinstaller --noconfirm ../packaging/instantvoice.spec
+
+      - name: Build installer
+        run: |
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=0.1.${{ github.run_number }}" packaging\windows\installer.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: packaging/windows/Output/Instant-Voicemod-Setup.exe
+
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            label: mac-AppleSilicon
+          - runner: macos-15-intel
+            label: mac-Intel
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.label == 'mac-Intel' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build Audio Unit effect
+        run: |
+          cmake -S plugin -B plugin/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build plugin/build --config Release --target VoiceCast_AU -j "$(sysctl -n hw.ncpu)"
+
+      - name: Build app
+        working-directory: companion
+        env:
+          APP_VERSION: 0.1.${{ github.run_number }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller huggingface_hub
+          python ../packaging/fetch_model.py "$WHISPER_MODEL"
+          python ../packaging/make_icon.py
+          pyinstaller --noconfirm ../packaging/instantvoice.spec
+
+      - name: Build installer
+        run: |
+          chmod +x packaging/macos/build_pkg.sh packaging/macos/scripts/postinstall
+          packaging/macos/build_pkg.sh "0.1.${{ github.run_number }}" "${{ matrix.label }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.label }}
+          path: packaging/macos/Output/*.pkg
+
+  release:
+    needs: [windows, macos]
+    if: ${{ always() && (needs.windows.result == 'success' || needs.macos.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Move the "latest" tag to this commit
+        run: |
+          git tag -f latest
+          git push -f origin latest
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Instant Voicemod (latest build)
+          body: |
+            Download the installer for your computer and double-click it.
+
+            | Computer | File |
+            |---|---|
+            | Windows 10/11 | `Instant-Voicemod-Setup.exe` |
+            | Mac with Apple chip (M1, M2, M3, M4...) | `Instant-Voicemod-mac-AppleSilicon.pkg` |
+            | Mac with Intel chip | `Instant-Voicemod-mac-Intel.pkg` |
+
+            Build 0.1.${{ github.run_number }} from commit ${{ github.sha }}.
+          files: dist/*
+          make_latest: true

@@ -1,0 +1,12 @@
+#!/bin/bash
+# Runs as root after the files are copied.
+# Refresh the Audio Unit cache so Wave Link sees the effect, then open the app for the logged-in user.
+killall -9 AudioComponentRegistrar 2>/dev/null || true
+xattr -dr com.apple.quarantine "/Applications/Instant Voicemod.app" 2>/dev/null || true
+xattr -dr com.apple.quarantine "/Library/Audio/Plug-Ins/Components/Instant Voicemod.component" 2>/dev/null || true
+
+CONSOLE_USER=$(stat -f%Su /dev/console)
+if [ -n "$CONSOLE_USER" ] && [ "$CONSOLE_USER" != "root" ]; then
+  sudo -u "$CONSOLE_USER" open -a "/Applications/Instant Voicemod.app" || true
+fi
+exit 0
