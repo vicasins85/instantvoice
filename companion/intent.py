@@ -173,6 +173,23 @@ class IntentResolver:
     def has_ai(self) -> bool:
         return bool(self.api_key or os.environ.get(self.api_key_env))
 
+    def sound_query(self, description: str) -> str:
+        """Turn 'un gato enfadado' into a short English search query for a sound library."""
+        client = self._client_or_none()
+        if client is None:
+            return description
+        try:
+            msg = client.messages.create(
+                model=self.model, max_tokens=20,
+                system="Reply with only a 1-3 word English search query for a sound effects library. No punctuation.",
+                messages=[{"role": "user", "content": description}],
+            )
+            text = "".join(getattr(b, "text", "") for b in msg.content).strip()
+            return text or description
+        except Exception as exc:
+            print(f"[intent] AI call failed: {exc}")
+            return description
+
     def _ask_ai(self, description: str, current: dict | None):
         client = self._client_or_none()
         if client is None:

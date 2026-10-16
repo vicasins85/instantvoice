@@ -54,6 +54,12 @@ main{flex:999 1 480px;min-width:0;padding:22px 26px;display:flex;flex-direction:
 .primary{height:50px;padding:0 22px;border-radius:12px;border:0;background:var(--accent);color:var(--on-accent);font-size:15px;font-weight:700}
 .primary[disabled]{opacity:.6;cursor:progress}
 .hint{font-size:12px;color:var(--muted)}
+.sounds{display:flex;flex-wrap:wrap;gap:8px}
+.sbtn{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 14px 0 6px;border-radius:999px;border:1px solid #2A2F43;background:var(--card);color:var(--text);font-size:13.5px;font-weight:600}
+.sbtn .sdot{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
+.sbtn:hover{border-color:var(--accent-line)}
+.says{background:var(--card);border:1px solid #272C40;border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:#C8CBD8}
+.says b{color:var(--text);font-weight:600}
 .gridhead{display:flex;align-items:baseline;justify-content:space-between}
 .gridhead h2{margin:0;font-size:19px;font-weight:600}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
@@ -80,7 +86,7 @@ input[type=range]{width:100%;height:28px;margin:0;accent-color:var(--accent)}
 .empty{color:var(--muted);font-size:14px;line-height:1.5}
 footer{display:flex;flex-wrap:wrap;gap:6px 20px;padding:10px 22px;border-top:1px solid var(--line);background:var(--panel);font-size:12px;color:var(--muted)}
 footer b{color:var(--text);font-weight:500}
-dialog{border:1px solid var(--line2);border-radius:18px;background:var(--panel);color:var(--text);padding:22px;width:min(460px,92vw)}
+dialog{border:1px solid var(--line2);border-radius:18px;background:var(--panel);color:var(--text);padding:22px;width:min(520px,92vw);max-height:88vh;overflow:auto}
 dialog::backdrop{background:rgba(5,6,10,.6)}
 dialog h3{margin:0 0 14px;font-size:18px}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;font-size:14px}
@@ -100,6 +106,7 @@ dialog h3{margin:0 0 14px;font-size:18px}
       <span class="pill mono" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Starting...</span></span>
     </div>
     <div class="actions">
+      <button class="toggle" id="listenToggle" aria-pressed="false"><span class="knob"></span>Listen for triggers</button>
       <button class="toggle" id="onToggle" aria-pressed="false"><span class="knob"></span>Voice changer</button>
       <button class="iconbtn" id="settingsBtn" aria-label="Settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
@@ -120,11 +127,13 @@ dialog h3{margin:0 0 14px;font-size:18px}
       <form class="describe" id="describeForm">
         <label for="describe">Describe a voice</label>
         <div class="row">
-          <input id="describe" type="text" autocomplete="off" placeholder="angry ogre, 80s robot, ghost in a cave...">
+          <input id="describe" type="text" autocomplete="off" placeholder="angry ogre, estoy feliz, que suene una bomba...">
           <button class="primary" id="createBtn" type="submit">Create voice</button>
         </div>
         <span class="hint mono" id="pttHint">Or hold Ctrl + Alt + V anywhere and say it. Nobody hears the command.</span>
       </form>
+      <div class="gridhead"><h2>Sounds</h2><span class="hint mono">or say "que suene ..."</span></div>
+      <div class="sounds" id="sounds"></div>
       <div class="gridhead"><h2 id="gridTitle">All voices</h2><span class="hint mono">click to apply</span></div>
       <div class="grid" id="grid"></div>
     </main>
@@ -146,6 +155,29 @@ dialog h3{margin:0 0 14px;font-size:18px}
     <label for="language">Language you speak commands in</label>
     <select id="language"><option value="es">Spanish</option><option value="en">English</option><option value="auto">Auto-detect</option></select>
   </div>
+  <div class="field">
+    <label for="route">How your voice reaches calls</label>
+    <select id="route"><option value="cable">Virtual cable (Zoom, Meet, Teams, Discord...)</option><option value="wavelink">Wave Link effect</option></select>
+  </div>
+  <div class="field">
+    <label for="inputDevice">Your microphone</label>
+    <select id="inputDevice"></select>
+  </div>
+  <div class="field" id="outputField">
+    <label for="outputDevice">Virtual cable</label>
+    <select id="outputDevice"></select>
+  </div>
+  <label class="check"><input type="checkbox" id="ambientSet"> Listen for trigger phrases ("estoy feliz", "que suene una bomba")</label>
+  <div class="field">
+    <label for="tempSeconds">How long a spoken mood lasts (seconds)</label>
+    <input id="tempSeconds" type="number" min="2" max="60" style="height:44px;border-radius:10px;border:1px solid #323850;background:var(--ground);color:var(--text);font:inherit;padding:0 12px">
+  </div>
+  <label class="check"><input type="checkbox" id="overlaySet"> Show the floating status bar over other apps</label>
+  <div class="field">
+    <label for="freesoundKey">Freesound key (optional, for any sound)</label>
+    <input id="freesoundKey" type="password" placeholder="from freesound.org/apiv2/apply" autocomplete="off">
+    <span class="small" id="fsState"></span>
+  </div>
   <label class="check"><input type="checkbox" id="autostart"> Start with my computer</label>
   <div class="small">Shortcuts</div>
   <div class="keys mono" id="keyList"></div>
@@ -162,15 +194,18 @@ let S = null, filter = "all", busy = false;
 
 // Preview in a normal browser (no app around it): fake backend so the page still works.
 const demo = {
-  st: {on:false,currentId:null,status:"Preview mode",pluginOk:false,hasAi:false,hotkeys:{push_to_talk:"ctrl+alt+v",clear:"ctrl+alt+x"},
+  st: {on:false,currentId:null,status:"Preview mode",pluginOk:false,hasAi:false,ambient:true,route:"cable",engine:{state:"running",detail:"Mic -> CABLE Input"},tempSeconds:6,
+       sounds:[{id:"fart",name:"Fart",color:"#6B5B2E"},{id:"explosion",name:"Explosion",color:"#9C3D1F"},{id:"airhorn",name:"Air horn",color:"#2B6CB0"}],
+       hotkeys:{push_to_talk:"ctrl+alt+v",clear:"ctrl+alt+x"},
        slots:[{n:1,name:"Empty"},{n:2,name:"Empty"},{n:3,name:"Empty"}],
        voices:[["ogre","Angry ogre","#8A4520",[80,25,45,20,0]],["robot","Robot","#3D4F86",[50,50,15,10,80]],["radio","Police radio","#2F6B5A",[50,50,30,0,0]],["ghost","Ghost","#5B4B87",[40,60,0,85,0]]]
        .map(([id,name,color,macros])=>({id,name,color,macros,custom:false,fav:false,mono:name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}))},
   state(){return this.st}, pick(id){this.st.currentId=id;this.st.on=true}, toggle(on){this.st.on=on}, clear(){this.st.on=false},
   create(t){const id="c"+Date.now();this.st.voices.unshift({id,name:t,color:"#7A3B5C",macros:[50,50,20,20,0],custom:true,fav:false,mono:t.slice(0,2).toUpperCase()});this.st.currentId=id;this.st.on=true},
   macro(id,n,v){const x=this.st.voices.find(v=>v.id===id);x.macros[MACROS.findIndex(m=>m[0]===n)]=v}, reset(){}, fav(id){const x=this.st.voices.find(v=>v.id===id);x.fav=!x.fav},
-  remove(id){this.st.voices=this.st.voices.filter(v=>v.id!==id)}, slot_save(){}, slot_recall(){},
-  get_settings(){return {hasKey:false,autostart:true,language:"es",hotkeys:this.st.hotkeys}}, save_settings(d){return this.get_settings()}
+  remove(id){this.st.voices=this.st.voices.filter(v=>v.id!==id)}, slot_save(){}, slot_recall(){}, play(){}, listen(on){this.st.ambient=on},
+  devices(){return {inputs:["MacBook Microphone"],outputs:["BlackHole 2ch"]}},
+  get_settings(){return {hasKey:false,autostart:true,language:"es",route:"cable",inputDevice:"",outputDevice:"",ambient:true,tempSeconds:6,overlay:true,hasFreesound:false,hotkeys:this.st.hotkeys}}, save_settings(d){return this.get_settings()}
 };
 const api = () => (window.pywebview && window.pywebview.api) ? window.pywebview.api : {
   ...Object.fromEntries(Object.keys(demo).filter(k=>typeof demo[k]==="function").map(k=>[k,(...a)=>Promise.resolve(demo[k](...a))]))
@@ -189,18 +224,27 @@ function render(){
   const dot = st.startsWith("Listening") ? "#EB4646" : st.startsWith("Thinking") ? "var(--warn)" : S.on ? "var(--ok)" : "#6C7189";
   document.getElementById("statusDot").style.background = dot;
   document.getElementById("onToggle").setAttribute("aria-pressed", S.on ? "true" : "false");
+  document.getElementById("listenToggle").setAttribute("aria-pressed", S.ambient ? "true" : "false");
+  document.getElementById("sounds").innerHTML = S.sounds.map(s =>
+    `<button class="sbtn" data-sound="${s.id}"><span class="sdot" style="background:${s.color}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg></span>${esc(s.name)}</button>`).join("");
   document.getElementById("pttHint").textContent = `Or hold ${keyLabel(S.hotkeys.push_to_talk)} anywhere and say it. Nobody hears the command.`;
 
   // banners
   const b = [];
-  if(!S.pluginOk) b.push(`<div class="banner warn">The voice effect isn't connected yet. Open <b>Wave Link</b>, and on your microphone add the effect <b>Instant Voicemod</b>.</div>`);
+  const eng = S.engine || {};
+  if(S.route === "cable"){
+    if(eng.state === "cable_missing") b.push(`<div class="banner warn"><b>Virtual cable not found.</b> Install it once (${navigator.platform.startsWith("Mac") ? "BlackHole 2ch" : "VB-CABLE"}), then this message goes away by itself. Guide: ${esc(eng.detail)}</div>`);
+    else if(eng.state === "error") b.push(`<div class="banner warn">Audio: ${esc(eng.detail)}</div>`);
+    else if(eng.state === "engine_missing") b.push(`<div class="banner warn">The audio engine isn't in this build. Use the Wave Link route in Settings.</div>`);
+    else if(eng.state === "running") b.push(`<div class="banner info">In Zoom, Meet, Teams or Discord choose <b>${navigator.platform.startsWith("Mac") ? "BlackHole 2ch" : "CABLE Output"}</b> as your microphone. <span class="mono" style="color:var(--faint)">${esc(eng.detail)}</span></div>`);
+  } else if(!S.pluginOk) b.push(`<div class="banner warn">The voice effect isn't connected yet. Open <b>Wave Link</b>, and on your microphone add the effect <b>Instant Voicemod</b>.</div>`);
   if(!S.hasAi) b.push(`<div class="banner info">Built-in voices work right away. To create <i>any</i> voice from a description, <button id="openKey">add your AI key</button>.</div>`);
   document.getElementById("banners").innerHTML = b.join("");
   const ok = document.getElementById("openKey"); if(ok) ok.onclick = openSettings;
 
   // filters
-  const counts = {all:S.voices.length, fav:S.voices.filter(v=>v.fav).length, custom:S.voices.filter(v=>v.custom).length};
-  const names = {all:"All voices", fav:"Favorites", custom:"My voices"};
+  const counts = {all:S.voices.filter(v=>!v.mood).length, moods:S.voices.filter(v=>v.mood).length, fav:S.voices.filter(v=>v.fav).length, custom:S.voices.filter(v=>v.custom).length};
+  const names = {all:"All voices", moods:"Moods", fav:"Favorites", custom:"My voices"};
   document.getElementById("filters").innerHTML = Object.keys(names).map(k =>
     `<button class="navbtn ${filter===k?"sel":""}" data-filter="${k}">${names[k]}<span class="n mono">${counts[k]}</span></button>`).join("");
   document.getElementById("slots").innerHTML = S.slots.map(s =>
@@ -208,13 +252,13 @@ function render(){
   document.getElementById("gridTitle").textContent = names[filter];
 
   // grid
-  const shown = S.voices.filter(v => filter==="all" || (filter==="fav" && v.fav) || (filter==="custom" && v.custom));
+  const shown = S.voices.filter(v => (filter==="all" && !v.mood) || (filter==="moods" && v.mood) || (filter==="fav" && v.fav) || (filter==="custom" && v.custom));
   document.getElementById("grid").innerHTML = shown.length ? shown.map(v => `
     <div class="cardwrap">
       <button class="card ${S.on && v.id===S.currentId ? "sel" : ""}" data-pick="${v.id}" aria-pressed="${S.on && v.id===S.currentId}">
         <span class="tile" style="background:${v.color}">${esc(v.mono)}</span>
         <span class="vname">${esc(v.name)}</span>
-        <span class="tag mono ${v.custom?"custom":""}">${v.custom?"Created":"Built-in"}</span>
+        <span class="tag mono ${v.custom?"custom":""}">${v.custom?"Created":v.mood?"Mood":"Built-in"}</span>
       </button>
       <button class="star ${v.fav?"on":""}" data-fav="${v.id}" aria-label="Favorite" aria-pressed="${v.fav}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="${v.fav?"currentColor":"none"}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>
@@ -225,7 +269,7 @@ function render(){
   const a = S.voices.find(v => v.id === S.currentId);
   const panel = document.getElementById("activePanel");
   if(!a){
-    panel.innerHTML = `<span class="label mono" style="padding:0">ACTIVE VOICE</span><p class="empty">Pick a voice, type one, or hold ${esc(keyLabel(S.hotkeys.push_to_talk))} and say it.</p>`;
+    panel.innerHTML = `<span class="label mono" style="padding:0">ACTIVE VOICE</span><p class="empty">Pick a voice, type one, or hold ${esc(keyLabel(S.hotkeys.push_to_talk))} and say it.</p>` + saysBox();
   } else {
     panel.innerHTML = `
       <span class="label mono" style="padding:0">ACTIVE VOICE${S.on?"":" (OFF)"}</span>
@@ -240,7 +284,7 @@ function render(){
         <button class="ghost plain" data-reset="${a.id}">Reset sliders</button>
         ${a.custom ? `<button class="ghost plain" data-remove="${a.id}">Delete voice</button>` : ""}
         <button class="ghost plain" id="normalBtn">Normal voice</button>
-      </div>`;
+      </div>` + saysBox();
     document.getElementById("normalBtn").onclick = () => api().clear().then(refresh);
   }
 
@@ -250,6 +294,17 @@ function render(){
   ].filter(x=>x[0]).map(([k,t]) => `<span><b>${esc(keyLabel(k))}</b> ${t}</span>`).join("");
 }
 
+function saysBox(){
+  const secs = S.tempSeconds || 6;
+  return `<div class="says"><b>Just say it${S.ambient ? "" : " (turn on Listen for triggers)"}</b><br>
+    "estoy enfadado" / "I'm angry" &rarr; angry voice for ${secs} s<br>
+    "estoy feliz", "estoy triste", "tengo miedo"<br>
+    "quiero tirarme un pedo" &rarr; fart<br>
+    "que suene una bomba" &rarr; explosion<br>
+    "quiero sonar como un ogro"<br>
+    "voz normal" &rarr; back to you</div>`;
+}
+
 function hint(v, lo, hi){ return v < 34 ? lo : v > 66 ? hi : "mid"; }
 
 // events (delegated)
@@ -257,6 +312,7 @@ document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if(!t) return;
   const d = t.dataset;
   if(d.filter){ filter = d.filter; render(); return; }
+  if(d.sound){ await api().play(d.sound); refresh(); return; }
   if(d.pick){ await api().pick(d.pick); }
   else if(d.fav){ await api().fav(d.fav); }
   else if(d.slot){ await api().slot_recall(+d.slot); }
@@ -275,6 +331,7 @@ document.addEventListener("change", async e => {
   await api().macro(S.currentId, r.dataset.macro, +r.value); refresh();
 });
 document.getElementById("onToggle").onclick = async () => { await api().toggle(!S.on); refresh(); };
+document.getElementById("listenToggle").onclick = async () => { await api().listen(!S.ambient); refresh(); };
 document.getElementById("describeForm").onsubmit = async e => {
   e.preventDefault();
   const input = document.getElementById("describe"), btn = document.getElementById("createBtn");
@@ -292,15 +349,31 @@ async function openSettings(){
   document.getElementById("keyState").textContent = s.hasKey ? "A key is saved. Paste a new one to replace it." : "No key yet. Get one at console.anthropic.com (API Keys).";
   document.getElementById("language").value = s.language;
   document.getElementById("autostart").checked = !!s.autostart;
+  document.getElementById("route").value = s.route;
+  document.getElementById("ambientSet").checked = !!s.ambient;
+  document.getElementById("tempSeconds").value = s.tempSeconds;
+  document.getElementById("overlaySet").checked = !!s.overlay;
+  document.getElementById("freesoundKey").value = "";
+  document.getElementById("fsState").textContent = s.hasFreesound ? "A Freesound key is saved." : "Without it you get the built-in sounds.";
+  const devs = await api().devices();
+  const opts = (list, sel, auto) => `<option value="">${auto}</option>` + (list||[]).map(n => `<option ${n===sel?"selected":""}>${esc(n)}</option>`).join("");
+  document.getElementById("inputDevice").innerHTML = opts(devs.inputs, s.inputDevice, "System default microphone");
+  document.getElementById("outputDevice").innerHTML = opts(devs.outputs, s.outputDevice, "Auto-detect (VB-CABLE / BlackHole)");
+  document.getElementById("outputField").style.display = s.route === "cable" ? "" : "none";
   document.getElementById("keyList").innerHTML = Object.entries(s.hotkeys).map(([k,v]) => `<span>${esc(keyLabel(v))}</span><span>${k.replace(/_/g," ")}</span>`).join("");
   dlg.showModal();
 }
 document.getElementById("settingsBtn").onclick = openSettings;
 document.getElementById("cancelSettings").onclick = () => dlg.close();
+document.getElementById("route").onchange = e => { document.getElementById("outputField").style.display = e.target.value === "cable" ? "" : "none"; };
 document.getElementById("removeKey").onclick = async () => { await api().save_settings({removeKey:true}); dlg.close(); refresh(); };
 document.getElementById("saveSettings").onclick = async () => {
   await api().save_settings({ apiKey: document.getElementById("apiKey").value, language: document.getElementById("language").value,
-                              autostart: document.getElementById("autostart").checked });
+                              autostart: document.getElementById("autostart").checked, route: document.getElementById("route").value,
+                              inputDevice: document.getElementById("inputDevice").value, outputDevice: document.getElementById("outputDevice").value,
+                              tempSeconds: +document.getElementById("tempSeconds").value, overlay: document.getElementById("overlaySet").checked,
+                              freesoundKey: document.getElementById("freesoundKey").value });
+  if(document.getElementById("ambientSet").checked !== !!S.ambient) await api().listen(document.getElementById("ambientSet").checked);
   dlg.close(); refresh();
 };
 

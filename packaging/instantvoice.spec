@@ -15,6 +15,8 @@ datas = [
 ]
 if os.path.isdir(os.path.join(SRC, "models")):
     datas.append((os.path.join(SRC, "models"), "models"))
+if os.path.isdir(os.path.join(SRC, "engine")):  # audio engine for the virtual-cable route, copied in by CI
+    datas.append((os.path.join(SRC, "engine"), "engine"))
 
 binaries, hiddenimports = [], []
 for pkg in ["faster_whisper", "ctranslate2", "tokenizers", "av", "onnxruntime",

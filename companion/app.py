@@ -1,8 +1,7 @@
-"""Instant Voicemod desktop app: window + menu bar / tray icon + start at login."""
+"""Instant Voicemod desktop app: main window, floating status overlay, tray / menu bar icon, start at login."""
 from __future__ import annotations
 
 import os
-import subprocess
 import sys
 import threading
 from pathlib import Path
@@ -53,11 +52,12 @@ def set_autostart(enabled: bool):
         print(f"[autostart] {exc}")
 
 
-# ---------- bridge exposed to the window's JavaScript ----------
+# ---------- bridges exposed to JavaScript ----------
 class Api:
-    def __init__(self, engine: Engine, settings: dict):
+    def __init__(self, engine: Engine, settings: dict, on_overlay_toggle):
         self._engine = engine
         self._settings = settings
+        self._on_overlay_toggle = on_overlay_toggle
 
     def state(self):
         return self._engine.snapshot()
@@ -72,7 +72,15 @@ class Api:
         self._engine.clear()
 
     def create(self, text):
-        return self._engine.create(str(text))
+        return self._engine.handle_text(str(text), "text")
+
+    def play(self, sound_id):
+        self._engine.play_sound(str(sound_id))
+
+    def listen(self, on):
+        self._settings["ambient"] = bool(on)
+        save_settings(self._settings)
+        self._engine.set_ambient(bool(on))
 
     def macro(self, voice_id, name, value):
         self._engine.set_macro(voice_id, name, float(value))
@@ -92,30 +100,88 @@ class Api:
     def slot_recall(self, n):
         self._engine.recall_slot(int(n))
 
+    def devices(self):
+        from audio_engine import list_devices
+        d = list_devices()
+        if d.get("status") == "error":  # engine missing (running from source): fall back to sounddevice
+            try:
+                import sounddevice as sd
+                devs = sd.query_devices()
+                d = {"inputs": [x["name"] for x in devs if x["max_input_channels"] > 0],
+                     "outputs": [x["name"] for x in devs if x["max_output_channels"] > 0]}
+            except Exception:
+                d = {"inputs": [], "outputs": []}
+        return d
+
     def get_settings(self):
         s = self._settings
-        return {"hasKey": bool(s.get("api_key")), "autostart": s.get("autostart", True),
-                "language": s.get("language", "es"), "hotkeys": s["hotkeys"]}
+        return {"hasKey": bool(s.get("api_key")), "hasFreesound": bool(s.get("freesound_key")),
+                "autostart": s.get("autostart", True), "language": s.get("language", "es"),
+                "route": s.get("route", "cable"), "inputDevice": s.get("input_device", ""),
+                "outputDevice": s.get("output_device", ""), "ambient": s.get("ambient", True),
+                "tempSeconds": s.get("temp_seconds", 6), "overlay": s.get("overlay", True),
+                "hotkeys": s["hotkeys"], "platform": sys.platform}
 
     def save_settings(self, data):
-        s = self._settings
+        s, e = self._settings, self._engine
         key = (data.get("apiKey") or "").strip()
         if key:
             s["api_key"] = key
-            self._engine.resolver.set_api_key(key)
+            e.resolver.set_api_key(key)
         if data.get("removeKey"):
             s["api_key"] = ""
-            self._engine.resolver.set_api_key("")
+            e.resolver.set_api_key("")
+        fkey = (data.get("freesoundKey") or "").strip()
+        if fkey:
+            s["freesound_key"] = fkey
+            e.sounds.freesound_key = fkey
         if "autostart" in data:
             s["autostart"] = bool(data["autostart"])
             set_autostart(s["autostart"])
         if data.get("language") in ("es", "en", "auto"):
             s["language"] = data["language"]
-            if self._engine.transcriber:
-                self._engine.transcriber.language = None if s["language"] == "auto" else s["language"]
+            if e.transcriber:
+                e.transcriber.language = None if s["language"] == "auto" else s["language"]
+        if "tempSeconds" in data:
+            s["temp_seconds"] = max(2, min(60, int(data["tempSeconds"] or 6)))
+        if "overlay" in data:
+            s["overlay"] = bool(data["overlay"])
+            self._on_overlay_toggle(s["overlay"])
+        restart_audio = False
+        for src, dst in (("inputDevice", "input_device"), ("outputDevice", "output_device")):
+            if src in data and data[src] != s.get(dst, ""):
+                s[dst] = data[src]
+                restart_audio = True
+        if data.get("route") in ("cable", "wavelink") and data["route"] != s.get("route"):
+            s["route"] = data["route"]
+            restart_audio = True
         save_settings(s)
-        self._engine.changed("Settings saved")
+        if restart_audio:
+            if s["route"] == "cable":
+                e.stop_route()
+                e.start_route()
+            else:
+                e.stop_route()
+            if e.recorder is not None:
+                try:
+                    from audio import Recorder
+                    e.recorder = Recorder(s.get("input_device") or None)
+                except Exception as exc:
+                    e.changed(f"Mic error: {exc}")
+            if e.ambient and e.ambient.running:
+                e.ambient.stop()
+                e.ambient = None
+                e.set_ambient(True)
+        e.changed("Settings saved")
         return self.get_settings()
+
+
+class OverlayApi:
+    def __init__(self, engine: Engine):
+        self._engine = engine
+
+    def state(self):
+        return self._engine.overlay_state()
 
 
 # ---------- tray / menu bar ----------
@@ -148,15 +214,39 @@ def run(hidden: bool = False):
 
     settings = load_settings()
     engine = Engine(settings)
-    api = Api(engine, settings)
+    holder = {"overlay": None, "quitting": False, "tray": None}
+
+    def overlay_toggle(on: bool):
+        w = holder["overlay"]
+        if w is None:
+            return
+        (w.show if on else w.hide)()
+
+    api = Api(engine, settings, overlay_toggle)
     if settings.get("autostart", True):
         set_autostart(True)
 
     window = webview.create_window(
         APP_NAME, url=str(resource("ui", "index.html")), js_api=api,
-        width=1220, height=800, min_size=(860, 600), hidden=hidden, background_color="#0C0E16",
+        width=1240, height=820, min_size=(880, 620), hidden=hidden, background_color="#0C0E16",
     )
-    state = {"quitting": False}
+
+    # Floating status pill, always on top of every app.
+    try:
+        ow, oh = 400, 76
+        try:
+            screen = webview.screens[0]
+            ox, oy = int(screen.width / 2 - ow / 2), 18
+        except Exception:
+            ox, oy = None, None
+        holder["overlay"] = webview.create_window(
+            "Instant Voicemod status", url=str(resource("ui", "overlay.html")), js_api=OverlayApi(engine),
+            width=ow, height=oh, x=ox, y=oy,
+            frameless=True, on_top=True, transparent=True, easy_drag=True, focus=False,
+            resizable=False, hidden=not settings.get("overlay", True), background_color="#000000",
+        )
+    except Exception as exc:
+        print(f"[overlay] unavailable: {exc}")
 
     def show():
         window.show()
@@ -166,17 +256,21 @@ def run(hidden: bool = False):
             pass
 
     def quit_app():
-        state["quitting"] = True
+        holder["quitting"] = True
         engine.stop()
-        if tray:
-            tray.stop()
-        window.destroy()
+        if holder["tray"]:
+            holder["tray"].stop()
+        for w in list(webview.windows):
+            try:
+                w.destroy()
+            except Exception:
+                pass
         os._exit(0)
 
     def on_closing():
-        if state["quitting"]:
+        if holder["quitting"]:
             return True
-        window.hide()  # keep running in the background, hotkeys stay alive
+        window.hide()  # keep running in the background, hotkeys and listening stay alive
         return False
 
     window.events.closing += on_closing
@@ -202,12 +296,13 @@ def run(hidden: bool = False):
     if tray is not None:
         try:
             tray.run_detached()  # must happen on the main thread before the window loop (macOS)
+            holder["tray"] = tray
         except Exception as exc:
             print(f"[tray] {exc}")
-            tray = None
 
     def on_started():
-        engine.start_audio_and_keys()
-        engine.changed("Ready. Hold " + settings["hotkeys"]["push_to_talk"].upper().replace("+", " + ") + " and say a voice")
+        engine.start_services()
+        ptt = settings["hotkeys"]["push_to_talk"].upper().replace("+", " + ")
+        engine.changed(f"Ready. Say 'estoy feliz' or hold {ptt}")
 
     webview.start(on_started, debug=not FROZEN and os.environ.get("IV_DEBUG") == "1")

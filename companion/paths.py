@@ -23,6 +23,12 @@ DEFAULT_SETTINGS = {
         "save_1": "ctrl+alt+shift+1", "save_2": "ctrl+alt+shift+2", "save_3": "ctrl+alt+shift+3",
     },
     "ai_model": "claude-haiku-5-5",
+    "route": "cable",          # cable = built-in engine + virtual cable | wavelink = effect inside Wave Link
+    "output_device": "",       # empty = auto-detect VB-CABLE / BlackHole
+    "ambient": True,           # listen for trigger phrases all the time
+    "temp_seconds": 6,         # how long a spoken mood / voice lasts in ambient mode
+    "overlay": True,
+    "freesound_key": "",
     "osc_port": 9001,
     "osc_reply_port": 9002,
 }

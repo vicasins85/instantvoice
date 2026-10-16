@@ -65,21 +65,31 @@ class Transcriber:
         self.language = None if language in (None, "", "auto") else language
         self._model = None
         self._ready = threading.Event()
+        self._lock = threading.Lock()
+        self.error = None
         threading.Thread(target=self._load, daemon=True).start()
 
     def _load(self):
-        from faster_whisper import WhisperModel
-        t0 = time.time()
-        self._model = WhisperModel(self.model_size, device="cpu", compute_type="int8")
-        print(f"[whisper] '{self.model_size}' ready in {time.time() - t0:.1f}s")
-        self._ready.set()
+        try:
+            from faster_whisper import WhisperModel
+            t0 = time.time()
+            self._model = WhisperModel(self.model_size, device="cpu", compute_type="int8", cpu_threads=4)
+            print(f"[whisper] ready in {time.time() - t0:.1f}s")
+        except Exception as exc:
+            self.error = str(exc)
+            print(f"[whisper] failed to load: {exc}")
+        finally:
+            self._ready.set()
 
     def transcribe(self, audio: np.ndarray) -> str:
         if audio.size < WHISPER_RATE * 0.3:
             return ""
         self._ready.wait()
-        segments, _ = self._model.transcribe(
-            audio, language=self.language, beam_size=1, vad_filter=False,
-            condition_on_previous_text=False,
-        )
-        return " ".join(s.text.strip() for s in segments).strip()
+        if self._model is None:
+            return ""
+        with self._lock:
+            segments, _ = self._model.transcribe(
+                audio, language=self.language, beam_size=1, vad_filter=False,
+                condition_on_previous_text=False, without_timestamps=True,
+            )
+            return " ".join(s.text.strip() for s in segments).strip()

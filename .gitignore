@@ -10,3 +10,4 @@ packaging/macos/work/
 packaging/macos/Output/
 packaging/windows/Output/
 .DS_Store
+companion/engine/

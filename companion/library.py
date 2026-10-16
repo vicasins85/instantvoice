@@ -77,10 +77,11 @@ class Library:
         out = []
         for c in self.data["custom"]:
             out.append({"id": c["id"], "name": c["name"], "color": c["color"], "custom": True,
-                        "base": c["params"]})
+                        "category": "voice", "base": c["params"]})
         for key, entry in self.presets.items():
             out.append({"id": key, "name": entry.get("name", key), "color": entry.get("color", "#4A5560"),
-                        "custom": False, "base": clamp_preset(entry["params"])})
+                        "custom": False, "category": entry.get("category", "voice"),
+                        "base": clamp_preset(entry["params"])})
         favs = set(self.data["favs"])
         for v in out:
             v["params"] = self.params_for(v["id"], v["base"])

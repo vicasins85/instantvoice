@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Instant Voicemod status</title>
+<style>
+html,body{margin:0;height:100%;background:transparent;overflow:hidden;
+  font-family:"SF Pro Text","Segoe UI Variable","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+  -webkit-user-select:none;user-select:none;cursor:grab}
+.wrap{height:100%;display:flex;align-items:center;justify-content:center}
+.pill{display:flex;align-items:center;gap:12px;min-width:220px;max-width:384px;height:56px;box-sizing:border-box;
+  padding:0 18px 0 10px;border-radius:999px;background:rgba(14,16,26,.92);border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 8px 28px rgba(0,0,0,.45);color:#ECEEF5;position:relative;overflow:hidden;transition:transform .2s,opacity .25s}
+.pill.small{min-width:0;height:40px;padding:0 14px 0 8px;opacity:.82}
+.badge{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:#2A2F43}
+.small .badge{width:26px;height:26px}
+.badge svg{width:20px;height:20px}
+.small .badge svg{width:14px;height:14px}
+.text{display:flex;flex-direction:column;min-width:0}
+.title{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.small .title{font-size:12.5px;font-weight:600}
+.sub{font-size:11.5px;color:#A9AEC2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.small .sub{display:none}
+.bar{position:absolute;left:0;bottom:0;height:3px;background:currentColor;opacity:.9;width:0}
+.pulse .badge{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(235,70,70,.55)}50%{box-shadow:0 0 0 8px rgba(235,70,70,0)}}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="pill small" id="pill" role="status" aria-live="polite">
+  <span class="badge" id="badge"></span>
+  <span class="text"><span class="title" id="title">Instant Voicemod</span><span class="sub" id="sub"></span></span>
+  <span class="bar" id="bar"></span>
+</div></div>
+<script>
+const ICONS = {
+  idle:'<svg viewBox="0 0 24 24" fill="none" stroke="#C8CBD8" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  listening:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  thinking:'<svg viewBox="0 0 24 24" fill="#fff"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>',
+  voice:'<svg viewBox="0 0 24 24" fill="none" stroke="#0C0E16" stroke-width="2.4" stroke-linecap="round"><path d="M4 12h2M8 8v8M12 5v14M16 9v6M20 11v2"/></svg>',
+  mood:'<svg viewBox="0 0 24 24" fill="none" stroke="#0C0E16" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>',
+  sound:'<svg viewBox="0 0 24 24" fill="none" stroke="#0C0E16" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>',
+  error:'<svg viewBox="0 0 24 24" fill="none" stroke="#0C0E16" stroke-width="2.4" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg>'
+};
+const COLORS = {idle:"#2A2F43", listening:"#EB4646", thinking:"#F0AF32", voice:"#8B7CFF", mood:"#FF9A57", sound:"#3DD68C", error:"#F0AF32"};
+let last = "";
+async function tick(){
+  if(!(window.pywebview && window.pywebview.api)) return;
+  let o; try { o = await window.pywebview.api.state(); } catch(e){ return; }
+  const pill = document.getElementById("pill");
+  pill.style.display = o.show ? "" : "none";
+  const small = o.kind === "idle";
+  const key = o.kind + o.title + o.sub + o.until;
+  if(key !== last){
+    last = key;
+    pill.className = "pill" + (small ? " small" : "") + (o.kind === "listening" ? " pulse" : "");
+    const b = document.getElementById("badge");
+    b.innerHTML = ICONS[o.kind] || ICONS.idle; b.style.background = COLORS[o.kind] || COLORS.idle;
+    document.getElementById("title").textContent = o.title;
+    document.getElementById("sub").textContent = o.sub;
+    pill.style.color = COLORS[o.kind] || "#fff";
+    document.getElementById("title").style.color = "#ECEEF5";
+  }
+  const bar = document.getElementById("bar");
+  if(o.until && o.until > o.now){
+    const total = Math.max(1, o.until - o.start);
+    bar.style.width = (100 * (o.until - o.now) / total) + "%";
+    if(o.kind === "mood" || o.kind === "voice") document.getElementById("sub").textContent = Math.ceil((o.until - o.now)/1000) + " s left";
+  } else bar.style.width = "0";
+}
+setInterval(tick, 200);
+window.addEventListener("pywebviewready", tick);
+</script>
+</body>
+</html>

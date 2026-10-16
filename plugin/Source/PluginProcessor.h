@@ -2,6 +2,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "VoiceChain.h"
 #include "OscBridge.h"
+#include "SoundPlayer.h"
 
 class VoiceCastProcessor : public juce::AudioProcessor
 {
@@ -35,6 +36,7 @@ public:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
 
     juce::AudioProcessorValueTreeState apvts;
+    SoundPlayer sounds;
     OscBridge osc;
 
 private:

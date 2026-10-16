@@ -21,10 +21,12 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Build VST3 effect
+      - name: Build VST3 effect and audio engine
         run: |
           cmake -S plugin -B plugin/build -G "Visual Studio 17 2022" -A x64
-          cmake --build plugin/build --config Release --target VoiceCast_VST3
+          cmake --build plugin/build --config Release --target VoiceCast_VST3 InstantVoiceEngine
+          New-Item -ItemType Directory -Force companion/engine | Out-Null
+          Copy-Item plugin/build/InstantVoiceEngine_artefacts/Release/InstantVoiceEngine.exe companion/engine/
 
       - name: Build app
         working-directory: companion
@@ -65,10 +67,12 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Build Audio Unit effect
+      - name: Build Audio Unit effect and audio engine
         run: |
           cmake -S plugin -B plugin/build -DCMAKE_BUILD_TYPE=Release
-          cmake --build plugin/build --config Release --target VoiceCast_AU -j "$(sysctl -n hw.ncpu)"
+          cmake --build plugin/build --config Release --target VoiceCast_AU InstantVoiceEngine -j "$(sysctl -n hw.ncpu)"
+          mkdir -p companion/engine
+          cp -R plugin/build/InstantVoiceEngine_artefacts/Release/InstantVoiceEngine.app companion/engine/
 
       - name: Build app
         working-directory: companion

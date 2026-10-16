@@ -13,7 +13,9 @@ OUT="$ROOT_DIR/packaging/macos/Output"
 rm -rf "$WORK" "$OUT"
 mkdir -p "$WORK/root/Applications" "$WORK/root/Library/Audio/Plug-Ins/Components" "$OUT"
 
-# Ad-hoc signatures so macOS accepts the bundles (no Apple Developer ID needed).
+# Ad-hoc signatures so macOS accepts the bundles (no Apple Developer ID needed). Inner engine first.
+ENGINE_IN_APP=$(find "$APP/Contents" -name "InstantVoiceEngine.app" -maxdepth 4 | head -n 1 || true)
+if [ -n "$ENGINE_IN_APP" ]; then codesign --force --deep -s - "$ENGINE_IN_APP"; fi
 codesign --force --deep -s - "$APP"
 codesign --force --deep -s - "$AU"
 

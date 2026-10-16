@@ -25,6 +25,9 @@ inline constexpr Spec all[] = {
     { "low_shelf_db",      "Low shelf",     -12.0f,   12.0f,     0.0f, "dB" },
     { "high_shelf_db",     "High shelf",    -12.0f,   12.0f,     0.0f, "dB" },
     { "chorus_mix",        "Chorus mix",      0.0f,    1.0f,     0.0f, ""   },
+    { "delay_ms",          "Delay time",      0.0f,  800.0f,     0.0f, "ms" },
+    { "delay_mix",         "Delay mix",       0.0f,    1.0f,     0.0f, ""   },
+    { "delay_feedback",    "Delay feedback",  0.0f,   0.85f,     0.3f, ""   },
     { "reverb_size",       "Reverb size",     0.0f,    1.0f,     0.3f, ""   },
     { "reverb_mix",        "Reverb mix",      0.0f,    1.0f,     0.0f, ""   },
     { "output_gain_db",    "Output gain",   -12.0f,   12.0f,     0.0f, "dB" },
@@ -35,7 +38,7 @@ inline constexpr int count = (int) (sizeof (all) / sizeof (all[0]));
 enum Index
 {
     pitch, formant, drive, bitcrush, ringHz, ringMix, highpass, lowpass,
-    lowShelf, highShelf, chorusMix, reverbSize, reverbMix, outputGain
+    lowShelf, highShelf, chorusMix, delayMs, delayMix, delayFeedback, reverbSize, reverbMix, outputGain
 };
 
 inline constexpr const char* bypassId = "bypass";

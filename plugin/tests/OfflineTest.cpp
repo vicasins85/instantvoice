@@ -61,6 +61,7 @@ int main (int argc, char** argv)
     const int block = 512;
     proc.setPlayConfigDetails (2, 2, sr, block);
     proc.prepareToPlay (sr, block);
+    std::printf ("osc listening: %s\n", proc.osc.isListening() ? "yes" : "no");
     std::printf ("latency: %d samples (%.1f ms)\n", proc.getLatencySamples(), proc.getLatencySamples() * 1000.0 / sr);
 
     juce::MidiBuffer midi;
@@ -110,6 +111,26 @@ int main (int argc, char** argv)
     std::printf ("mute     %s\n", muted ? "OK" : "FAIL");
     proc.osc.setBool (params::muteId, false);
     proc.osc.applyNudge ("pitch_semitones", -2.0f);
+
+    // Sound effect mixed over silence, plus delay
+    {
+        auto tmp = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("iv_test_tone.wav");
+        juce::AudioBuffer<float> tone (1, 22050);
+        for (int i = 0; i < tone.getNumSamples(); ++i) tone.setSample (0, i, 0.5f * (float) std::sin (i * 0.06));
+        tmp.deleteFile();
+        juce::WavAudioFormat wav;
+        { std::unique_ptr<juce::AudioFormatWriter> w (wav.createWriterFor (new juce::FileOutputStream (tmp), 44100.0, 1, 16, {}, 0));
+          w->writeFromAudioSampleBuffer (tone, 0, tone.getNumSamples()); }
+        const double secs = proc.sounds.play (tmp);
+        juce::AudioBuffer<float> b (2, block); float peak = 0;
+        for (int k = 0; k < 20; ++k) { b.clear(); proc.processBlock (b, midi); peak = juce::jmax (peak, b.getMagnitude (0, 0, block)); }
+        std::printf ("sound    len %.2fs peak %.2f %s\n", secs, peak, (secs > 0.45 && peak > 0.2f) ? "OK" : "FAIL");
+        ok = ok && secs > 0.45 && peak > 0.2f;
+        proc.osc.applyPreset (R"({"delay_ms":250,"delay_mix":0.5})");
+        float tail = 0;
+        for (int k = 0; k < 60; ++k) { b.clear(); if (k == 0) b.setSample (0, 10, 0.8f), b.setSample (1, 10, 0.8f); proc.processBlock (b, midi); if (k > 25) tail = juce::jmax (tail, b.getMagnitude (0, 0, block)); }
+        std::printf ("delay    echo tail %.3f %s\n", tail, tail > 0.001f ? "OK" : "FAIL");
+    }
     std::printf ("nudge    pitch now %.1f\n", proc.apvts.getRawParameterValue ("pitch_semitones")->load());
     return ok && muted ? 0 : 1;
 }

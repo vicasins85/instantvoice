@@ -56,6 +56,7 @@ target_sources(VoiceCast PRIVATE
     Source/PluginEditor.cpp
     Source/VoiceChain.cpp
     Source/OscBridge.cpp
+    Source/SoundPlayer.cpp
 )
 
 target_compile_definitions(VoiceCast PUBLIC
@@ -68,6 +69,7 @@ target_compile_definitions(VoiceCast PUBLIC
 target_link_libraries(VoiceCast
     PRIVATE
         juce::juce_audio_utils
+        juce::juce_audio_formats
         juce::juce_dsp
         juce::juce_osc
         signalsmith-stretch
@@ -77,12 +79,35 @@ target_link_libraries(VoiceCast
         juce::juce_recommended_warning_flags
 )
 
+# Background audio engine for the virtual-cable route (no Wave Link needed).
+juce_add_gui_app(InstantVoiceEngine
+    PRODUCT_NAME "InstantVoiceEngine"
+    COMPANY_NAME "InstantVoice"
+    BUNDLE_ID "com.instantvoice.engine"
+    MICROPHONE_PERMISSION_ENABLED TRUE
+    MICROPHONE_PERMISSION_TEXT "Instant Voicemod processes your microphone in real time."
+    PLIST_TO_MERGE "<plist><dict><key>LSUIElement</key><true/></dict></plist>"
+)
+target_sources(InstantVoiceEngine PRIVATE
+    Source/EngineMain.cpp
+    Source/PluginProcessor.cpp
+    Source/PluginEditor.cpp
+    Source/VoiceChain.cpp
+    Source/OscBridge.cpp
+    Source/SoundPlayer.cpp
+)
+target_compile_definitions(InstantVoiceEngine PRIVATE
+    JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_APPLICATION_NAME_STRING="InstantVoiceEngine" JUCE_APPLICATION_VERSION_STRING="0.2.0")
+target_link_libraries(InstantVoiceEngine PRIVATE
+    juce::juce_audio_utils juce::juce_audio_formats juce::juce_dsp juce::juce_osc signalsmith-stretch
+    PUBLIC juce::juce_recommended_config_flags)
+
 # Optional offline test: cmake -DVOICECAST_TESTS=ON
 option(VOICECAST_TESTS "Build the offline DSP test" OFF)
 if(VOICECAST_TESTS)
     juce_add_console_app(VoiceCastTest PRODUCT_NAME "VoiceCastTest")
     target_sources(VoiceCastTest PRIVATE tests/OfflineTest.cpp Source/PluginProcessor.cpp
-                   Source/PluginEditor.cpp Source/VoiceChain.cpp Source/OscBridge.cpp)
+                   Source/PluginEditor.cpp Source/VoiceChain.cpp Source/OscBridge.cpp Source/SoundPlayer.cpp)
     target_compile_definitions(VoiceCastTest PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
     target_link_libraries(VoiceCastTest PRIVATE juce::juce_audio_utils juce::juce_audio_formats juce::juce_dsp juce::juce_osc
                           signalsmith-stretch PUBLIC juce::juce_recommended_config_flags)

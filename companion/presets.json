@@ -21,7 +21,8 @@
       "high_shelf_db": -3,
       "reverb_size": 0.3,
       "reverb_mix": 0.12
-    }
+    },
+    "category": "voice"
   },
   "giant": {
     "name": "Giant",
@@ -40,7 +41,8 @@
       "low_shelf_db": 6,
       "reverb_size": 0.7,
       "reverb_mix": 0.3
-    }
+    },
+    "category": "voice"
   },
   "demon": {
     "name": "Demon",
@@ -64,7 +66,8 @@
       "ring_mix": 0.25,
       "reverb_size": 0.8,
       "reverb_mix": 0.35
-    }
+    },
+    "category": "voice"
   },
   "robot": {
     "name": "Robot",
@@ -86,7 +89,8 @@
       "highpass_hz": 150,
       "chorus_mix": 0.2,
       "output_gain_db": 4
-    }
+    },
+    "category": "voice"
   },
   "radio": {
     "name": "Police radio",
@@ -109,7 +113,8 @@
       "drive": 0.25,
       "bitcrush_bits": 12,
       "high_shelf_db": 3
-    }
+    },
+    "category": "voice"
   },
   "old_radio": {
     "name": "Old radio",
@@ -128,7 +133,8 @@
       "lowpass_hz": 2500,
       "drive": 0.4,
       "bitcrush_bits": 8
-    }
+    },
+    "category": "voice"
   },
   "chipmunk": {
     "name": "Chipmunk",
@@ -146,7 +152,8 @@
     "params": {
       "pitch_semitones": 8,
       "formant_semitones": 5
-    }
+    },
+    "category": "voice"
   },
   "child": {
     "name": "Child",
@@ -164,7 +171,8 @@
       "pitch_semitones": 5,
       "formant_semitones": 4,
       "high_shelf_db": 2
-    }
+    },
+    "category": "voice"
   },
   "cave": {
     "name": "Cave",
@@ -182,7 +190,8 @@
       "reverb_size": 0.95,
       "reverb_mix": 0.6,
       "low_shelf_db": 3
-    }
+    },
+    "category": "voice"
   },
   "alien": {
     "name": "Alien",
@@ -202,7 +211,8 @@
       "ring_mix": 0.35,
       "chorus_mix": 0.5,
       "reverb_mix": 0.2
-    }
+    },
+    "category": "voice"
   },
   "underwater": {
     "name": "Underwater",
@@ -221,7 +231,8 @@
       "reverb_size": 0.6,
       "reverb_mix": 0.35,
       "low_shelf_db": 4
-    }
+    },
+    "category": "voice"
   },
   "ghost": {
     "name": "Ghost",
@@ -242,6 +253,135 @@
       "reverb_mix": 0.55,
       "high_shelf_db": 3,
       "low_shelf_db": -6
+    },
+    "category": "voice"
+  },
+  "angry": {
+    "name": "Angry",
+    "color": "#9B2C2C",
+    "category": "mood",
+    "keywords": [
+      "angry",
+      "enfadado",
+      "enfadada",
+      "cabreado",
+      "cabreada",
+      "furioso",
+      "furiosa",
+      "mad"
+    ],
+    "params": {
+      "pitch_semitones": -3,
+      "formant_semitones": -1.5,
+      "drive": 0.4,
+      "low_shelf_db": 4,
+      "high_shelf_db": 2,
+      "output_gain_db": 2
+    }
+  },
+  "happy": {
+    "name": "Happy",
+    "color": "#B7791F",
+    "category": "mood",
+    "keywords": [
+      "happy",
+      "feliz",
+      "contento",
+      "contenta",
+      "alegre"
+    ],
+    "params": {
+      "pitch_semitones": 3,
+      "formant_semitones": 1,
+      "chorus_mix": 0.25,
+      "delay_ms": 180,
+      "delay_mix": 0.18,
+      "delay_feedback": 0.25,
+      "reverb_size": 0.45,
+      "reverb_mix": 0.22,
+      "high_shelf_db": 3
+    }
+  },
+  "sad": {
+    "name": "Sad",
+    "color": "#2C5282",
+    "category": "mood",
+    "keywords": [
+      "sad",
+      "triste",
+      "deprimido",
+      "deprimida"
+    ],
+    "params": {
+      "pitch_semitones": -2,
+      "formant_semitones": -0.5,
+      "high_shelf_db": -5,
+      "lowpass_hz": 5000,
+      "reverb_size": 0.6,
+      "reverb_mix": 0.25,
+      "output_gain_db": -1
+    }
+  },
+  "scared": {
+    "name": "Scared",
+    "color": "#553C9A",
+    "category": "mood",
+    "keywords": [
+      "scared",
+      "asustado",
+      "asustada",
+      "miedo",
+      "afraid"
+    ],
+    "params": {
+      "pitch_semitones": 2,
+      "formant_semitones": 1.5,
+      "chorus_mix": 0.7,
+      "reverb_size": 0.7,
+      "reverb_mix": 0.3,
+      "low_shelf_db": -4
+    }
+  },
+  "tired": {
+    "name": "Tired",
+    "color": "#4A5568",
+    "category": "mood",
+    "keywords": [
+      "tired",
+      "cansado",
+      "cansada",
+      "agotado",
+      "agotada",
+      "sleepy",
+      "dormido"
+    ],
+    "params": {
+      "pitch_semitones": -4,
+      "formant_semitones": -1,
+      "lowpass_hz": 4000,
+      "high_shelf_db": -4,
+      "output_gain_db": -2
+    }
+  },
+  "excited": {
+    "name": "Excited",
+    "color": "#C05621",
+    "category": "mood",
+    "keywords": [
+      "excited",
+      "emocionado",
+      "emocionada",
+      "flipando",
+      "hyped"
+    ],
+    "params": {
+      "pitch_semitones": 4,
+      "formant_semitones": 2,
+      "drive": 0.15,
+      "delay_ms": 120,
+      "delay_mix": 0.2,
+      "reverb_mix": 0.12,
+      "output_gain_db": 2
     }
   }
 }

@@ -28,6 +28,12 @@ class PluginLink:
     def mute(self, on: bool):
         self.client.send_message("/vc/mute", 1 if on else 0)
 
+    def sound(self, path: str, gain_db: float = 0.0):
+        self.client.send_message("/vc/sound", [str(path), float(gain_db)])
+
+    def sound_stop(self):
+        self.client.send_message("/vc/sound_stop", [])
+
     def ping(self, timeout: float = 1.0) -> bool:
         """True if a plugin instance answered /vc/pong."""
         got = threading.Event()

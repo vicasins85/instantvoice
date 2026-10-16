@@ -26,7 +26,7 @@ VoiceCastProcessor::VoiceCastProcessor()
                           .withInput ("Input", juce::AudioChannelSet::stereo(), true)
                           .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
       apvts (*this, nullptr, "VoiceCast", createLayout()),
-      osc (apvts)
+      osc (apvts, sounds)
 {
     for (int i = 0; i < params::count; ++i)
         raw[(size_t) i] = apvts.getRawParameterValue (params::all[i].id);
@@ -46,6 +46,7 @@ void VoiceCastProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     const int channels = juce::jmax (getTotalNumInputChannels(), getTotalNumOutputChannels());
     chain.prepare (sampleRate, samplesPerBlock, channels);
+    sounds.prepare (sampleRate);
     setLatencySamples (chain.getLatencySamples());
 }
 
@@ -59,6 +60,20 @@ void VoiceCastProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
 
     chain.setTargets (values, rawBypass->load() > 0.5f, rawMute->load() > 0.5f);
     chain.process (buffer);
+
+    const int ch = juce::jmin (buffer.getNumChannels(), juce::jmax (getTotalNumOutputChannels(), 1));
+    sounds.mixInto (buffer, ch);
+    for (int c = 0; c < ch; ++c)
+    {
+        auto* d = buffer.getWritePointer (c);
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+        {
+            // Soft knee above 0.8: untouched below, never clips hard when a sound plays over the voice.
+            const float a = std::abs (d[i]);
+            if (a > 0.8f)
+                d[i] = std::copysign (0.8f + 0.2f * std::tanh ((a - 0.8f) / 0.2f), d[i]);
+        }
+    }
 }
 
 juce::AudioProcessorEditor* VoiceCastProcessor::createEditor()

@@ -67,6 +67,9 @@ void VoiceChain::prepare (double sampleRate, int maxBlockSize, int numChannels)
     chorus.setCentreDelay (8.0f);
     chorus.setFeedback (0.0f);
 
+    echo.prepare (spec);
+    echo.setMaximumDelayInSamples ((int) (sr * 0.85));
+
     reverb.prepare (spec);
 
     reset();
@@ -81,6 +84,7 @@ void VoiceChain::reset()
     for (auto& f : lowShelf)  f.reset();
     for (auto& f : highShelf) f.reset();
     chorus.reset();
+    echo.reset();
     reverb.reset();
     ringPhase = 0.0;
 }
@@ -133,6 +137,9 @@ void VoiceChain::updateBlockRateDsp (int numSamples)
     }
 
     chorus.setMix (blockValue (params::chorusMix));
+    echo.setDelay ((float) juce::jmax (1.0, blockValue (params::delayMs) * 0.001 * sr));
+    delayMixNow = blockValue (params::delayMix);
+    delayFbNow  = blockValue (params::delayFeedback);
 
     const float revMix = blockValue (params::reverbMix);
     juce::dsp::Reverb::Parameters rp;
@@ -247,6 +254,30 @@ void VoiceChain::processChunk (juce::AudioBuffer<float>& buffer)
         auto block = juce::dsp::AudioBlock<float> (buffer).getSubsetChannelBlock (0, (size_t) ch).getSubBlock (0, (size_t) n);
         juce::dsp::ProcessContextReplacing<float> ctx (block);
         chorus.process (ctx);
+    }
+    if (delayMixNow > 0.001f)
+    {
+        for (int c = 0; c < ch; ++c)
+            for (int i = 0; i < n; ++i)
+            {
+                const float x = buffer.getSample (c, i);
+                const float d = echo.popSample (c);
+                echo.pushSample (c, x + d * delayFbNow);
+                buffer.setSample (c, i, x + d * delayMixNow);
+            }
+    }
+    else
+    {
+        for (int c = 0; c < ch; ++c)
+            for (int i = 0; i < n; ++i)
+            {
+                echo.popSample (c);
+                echo.pushSample (c, buffer.getSample (c, i)); // keep the line primed so turning it on has no gap
+            }
+    }
+    {
+        auto block = juce::dsp::AudioBlock<float> (buffer).getSubsetChannelBlock (0, (size_t) ch).getSubBlock (0, (size_t) n);
+        juce::dsp::ProcessContextReplacing<float> ctx (block);
         reverb.process (ctx);
     }
 

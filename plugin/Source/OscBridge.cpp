@@ -1,9 +1,12 @@
 #include "OscBridge.h"
 #include "Params.h"
 
-OscBridge::OscBridge (juce::AudioProcessorValueTreeState& state) : apvts (state)
+OscBridge::OscBridge (juce::AudioProcessorValueTreeState& state, SoundPlayer& soundPlayer)
+    : apvts (state), sounds (soundPlayer)
 {
-    listening = connect (listenPort);
+    // Bind to localhost only: nothing outside this computer can talk to it, and no firewall prompt.
+    socket = std::make_unique<juce::DatagramSocket> (false);
+    listening = socket->bindToPort (listenPort, "127.0.0.1") && connectToSocket (*socket);
     if (listening)
         addListener (this);
     else
@@ -93,8 +96,18 @@ void OscBridge::oscMessageReceived (const juce::OSCMessage& m)
         setBool (params::bypassId, intArg (0, 1) != 0);
     else if (address == "/vc/mute")
         setBool (params::muteId, intArg (0, 1) != 0);
+    else if (address == "/vc/sound" && m.size() >= 1 && m[0].isString())
+    {
+        const float gain = (m.size() >= 2 && m[1].isFloat32()) ? m[1].getFloat32() : 0.0f;
+        const double secs = sounds.play (juce::File (m[0].getString()), gain);
+        lastMessage = secs < 0 ? juce::String ("sound not found") : "sound " + juce::String (secs, 1) + "s";
+        return;
+    }
+    else if (address == "/vc/sound_stop")
+        sounds.stop();
     else if (address == "/vc/ping")
     {
+        lastPingMs = juce::Time::getMillisecondCounter();
         if (sender.connect ("127.0.0.1", replyPort))
             sender.send ("/vc/pong");
     }

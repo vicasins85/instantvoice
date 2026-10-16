@@ -6,7 +6,7 @@
 
 // Real-time voice effect chain.
 // Signal flow: Pitch/Formant -> High-pass -> Drive -> Bitcrush -> Ring mod
-//              -> Low shelf / High shelf / Low-pass -> Chorus -> Reverb -> Output gain
+//              -> Low shelf / High shelf / Low-pass -> Chorus -> Delay -> Reverb -> Output gain
 // Then: wet/dry crossfade for bypass, and a fast mute gain for push-to-talk commands.
 class VoiceChain
 {
@@ -44,8 +44,10 @@ private:
     juce::dsp::StateVariableTPTFilter<float> highpass, lowpass;
     std::array<juce::dsp::IIR::Filter<float>, 2> lowShelf, highShelf; // max 2 channels
     juce::dsp::Chorus<float> chorus;
+    juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> echo { 1 << 17 };
     juce::dsp::Reverb reverb;
 
     double ringPhase = 0.0;
+    float delayMixNow = 0.0f, delayFbNow = 0.3f;
     float lastLowShelfDb = 1000.0f, lastHighShelfDb = 1000.0f;
 };
