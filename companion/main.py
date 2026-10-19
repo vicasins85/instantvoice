@@ -9,8 +9,32 @@
 from __future__ import annotations
 
 import argparse
+import multiprocessing
+import os
 import sys
 import time
+
+_LOCK = None
+
+
+def single_instance() -> bool:
+    """True if we are the only running copy. A second copy would otherwise start a second
+    engine, tray icon and overlay on top of the first one."""
+    global _LOCK
+    path = os.path.join(os.path.expanduser("~"), ".instantvoice", "app.lock")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    try:
+        if sys.platform == "win32":
+            import msvcrt
+            _LOCK = open(path, "a+")
+            msvcrt.locking(_LOCK.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            _LOCK = open(path, "a+")
+            fcntl.flock(_LOCK.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except OSError:
+        return False
 
 
 def main():
@@ -44,10 +68,19 @@ def main():
             engine.stop()
         return 0
 
+    if not single_instance():
+        print("[app] already running")
+        return 0
+
     from app import run
     run(hidden=args.hidden)
     return 0
 
 
 if __name__ == "__main__":
+    # Frozen apps: libraries that use multiprocessing (tqdm locks, resource tracker) re-run
+    # sys.executable, which is this app. Without this, each child opens a new app window.
+    multiprocessing.freeze_support()
+    if any(a in ("-c", "-B", "-s") or a.startswith("--multiprocessing") for a in sys.argv[1:]):
+        sys.exit(0)  # a helper process that freeze_support did not claim: never open the UI
     sys.exit(main())
