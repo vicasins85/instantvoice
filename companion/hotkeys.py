@@ -30,6 +30,41 @@ MAC_VK = {
 }
 
 
+_MAC_PRIMED = False
+
+
+def prime_macos() -> bool:
+    """macOS 14+ kills the app if the keyboard layout is read off the main thread.
+
+    pynput reads it (TSMGetInputSourceProperty) inside its listener thread, which crashes
+    with EXC_BREAKPOINT in dispatch_assert_queue. Read it once here, on the main thread,
+    and hand pynput the cached value. Call this from the main thread before start().
+    """
+    global _MAC_PRIMED
+    if sys.platform != "darwin" or _MAC_PRIMED:
+        return True
+    import contextlib
+    import threading
+    if threading.current_thread() is not threading.main_thread():
+        return False
+    try:
+        from pynput._util import darwin as _ud
+        from pynput.keyboard import _darwin as _kd
+        with _ud.keycode_context() as ctx:
+            cached = ctx
+
+        @contextlib.contextmanager
+        def cached_context():
+            yield cached
+
+        _ud.keycode_context = cached_context
+        _kd.keycode_context = cached_context
+        _MAC_PRIMED = True
+    except Exception as exc:
+        print(f"[hotkey] could not prime macOS keyboard layout: {exc}")
+    return _MAC_PRIMED
+
+
 def key_token(key) -> str | None:
     if key in MODIFIERS:
         return MODIFIERS[key]
@@ -103,6 +138,9 @@ class HotkeyManager:
             self.mods.discard(tok)
 
     def start(self):
+        if not prime_macos():
+            print("[hotkey] macOS keyboard layout not primed on the main thread; hotkeys disabled")
+            return
         self.listener = keyboard.Listener(on_press=self._press, on_release=self._release)
         self.listener.start()
 

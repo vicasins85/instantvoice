@@ -292,6 +292,13 @@ def run(hidden: bool = False):
 
     engine.listeners.append(push_update)
 
+    # macOS: read the keyboard layout on the main thread now; hotkeys start later on a worker thread.
+    try:
+        from hotkeys import prime_macos
+        prime_macos()
+    except Exception as exc:
+        print(f"[hotkey] {exc}")
+
     tray = make_tray(show, engine, quit_app)
     if tray is not None:
         try:
